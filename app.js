@@ -6,11 +6,18 @@ var logger = require('morgan');
 let multer  = require('multer');
 let fs=require('fs')
 let cookieSession=require('cookie-session')
-
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+var history = require('connect-history-api-fallback');
 
 var app = express();
+
+app.all('*', function (req, res, next) {
+  // res.header("Access-Control-Allow-Origin", "*");//跨域解决
+  // res.header("Access-Control-Allow-Headers", "X-Requested-With,Content-Type");
+  // res.header("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS");
+  res.header("Cache-Control", "no-store");//304
+  next();
+});
+
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -47,6 +54,16 @@ app.use(cookieSession({
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+app.use(history({
+  htmlAcceptHeaders: ['text/html', 'application/xhtml+xml'],
+  rewrites: [{
+      from: /^\/.*$/,
+      to: function (context) {
+        return "/";
+      }
+    }]
+})); //关键一步
+
 // 多资源托管
 app.use(express.static(path.join(__dirname, 'public','template')));
 app.use('/admin',express.static(path.join(__dirname, 'public','admin')));
@@ -54,8 +71,6 @@ app.use(express.static(path.join(__dirname, 'public')));//公共资源
 
 
 // 接口响应
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
 
 app.all('/api/*',require('./routes/api/params')) //处理api下的公共接口
 app.use('/api/goods',require('./routes/api/goods'))
